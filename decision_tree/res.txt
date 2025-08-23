@@ -1,0 +1,14 @@
+Node DT (node 0; parent None)
+  Entropy    : 0.9709505944546686
+  Children   : {'overcast': 1, 'rainy': 2, 'sunny': 5}
+  Prediction : {'prediction': 'yes', 'certainty': 0.6, 'max occurence': 6, 'total': 10}
+Node DT (node 5; parent 0)
+  Entropy    : 0.8112781244591328
+  Children   : {'cool': 6, 'hot': 7, 'mild': 8}
+  Prediction : {'prediction': 'no', 'certainty': 0.75, 'max occurence': 3, 'total': 4}
+Node DT (node 8; parent 5)
+  Entropy    : 0.0
+  Children   : {}
+  Prediction : {'prediction': 'no', 'certainty': 1, 'max occurence': 1, 'total': 1}
+
+Reason for leaf: Min Number of Samples Reached
