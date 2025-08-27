@@ -157,13 +157,49 @@ class ID3:
         self.x = x
         self.y = y
 
-    def traiṇ(self, max_depth: int = 4, min_samples_per_leaf: int = 20):
+    def train(self, max_depth: int = 4, min_samples_per_leaf: int = 20):
         # Reset if needed
         self.reset()
 
         # Get split current
         self._recursion(max_depth, min_samples_per_leaf)
-    
+
+    def traverse_tree(self, X_row: dict, node_id: int = 0):
+        """
+        Đi xuống cây từ node hiện tại (root hoặc bất kỳ node nào).
+        
+        Parameters
+        ----------
+        node : Node
+            Node hiện tại (bắt đầu từ root).
+        X_row : dict
+            Một sample (vd: {"Outlook": "Sunny", "Temperature": "Cool", ...})
+        NODES : dict
+            Dict chứa tất cả các Node, key là node_id
+        
+        Returns
+        -------
+        Node
+            Node leaf cuối cùng mà sample đi tới.
+        """
+        current = self.nodes[node_id]
+
+        while not current.is_leaf:
+            # Lấy feature đã chọn ở node hiện tại
+            feature = current.chosen_feature
+            if feature is None:
+                break  # không có feature thì dừng
+
+            value = X_row.get(feature.name, None)  # lấy giá trị của sample theo feature
+            if value not in current.children:
+                break  # nếu không có nhánh phù hợp thì dừng
+
+            # lấy id con và đi tiếp
+            child_id = current.children[value]
+            current = self.nodes[child_id]
+
+        return current.get_prediction(self.y)
+
     def reset(self):
         self.nodes = self.nodes[:1]
 
