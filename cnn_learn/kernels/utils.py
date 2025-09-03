@@ -65,7 +65,7 @@ def plot_tensors(column: int = 3, **tensor_imgs) -> None:
     :return: None
     """
     if len(tensor_imgs) == 1:
-        for img_title, tensor_img in tensor_imgs:
+        for img_title, tensor_img in tensor_imgs.items():
             # Xử lý ảnh cho matplotlib
             tensor_img = tensor4plt(tensor_img)
 

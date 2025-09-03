@@ -1,7 +1,7 @@
 from torch import float32
 from torch import tensor
 
-class Edge_detection:
+class EdgeDetection:
     # Sobel kernel
     sobel_x = [[-1, 0, 1],
                [-2, 0, 2],
