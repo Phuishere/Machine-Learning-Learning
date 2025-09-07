@@ -12,10 +12,6 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-optimizer = torch.optim.Adam(model.parameters(), lr = 0.0015)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min', factor = 0.1, patience = 2) # giảm sau mỗi 2 lần không cải thiện (thường fluctuate 1 lần)
-criterion = nn.CrossEntropyLoss()
-
 class Trainer:
     def __init__(
         self,
@@ -27,11 +23,11 @@ class Trainer:
 
         optimizer,
         criterion,
-        early_stopping,
-        scheduler,
+        scheduler = None,
+        early_stopping = None,
 
-        step_callback,
-        epoch_callback,
+        step_callback = None,
+        epoch_callback = None,
         
         device: str = "cuda",
         verbose: bool = True,
@@ -57,12 +53,22 @@ class Trainer:
         # Regularizer
         self.optimizer = optimizer
         self.criterion = criterion
-        self.early_stopping = early_stopping
         self.scheduler = scheduler
+        self.early_stopping = early_stopping
         
         # Call back during training
-        self.step_callback = step_callback
-        self.epoch_callback = epoch_callback
+        if step_callback is not None:
+            assert isinstance(step_callback, function)
+            self.step_callback = step_callback
+        else:
+            self.step_callback = lambda epoch, step, loss: print(f"--- Epoch {epoch} Step {step} ; Train Loss {loss} ---")
+        
+        # Call back after one epoch
+        if epoch_callback is not None:
+            assert isinstance(epoch_callback, function)
+            self.epoch_callback = epoch_callback
+        else:
+            self.epoch_callback = lambda epoch, train_loss, val_loss, val_acc: print(f"EPOCH {epoch} Train loss: {train_loss}, Val loss: {val_loss}, Val acc: {val_acc}")
 
         # History
         self.train_losses = []
@@ -83,24 +89,30 @@ class Trainer:
             # Loop over sample
             for i, sample in enumerate(self.train_loader):
                 step_loss = self._fit_train_sample(sample)
-                epoch_loss += step_loss.item()
+                epoch_loss += step_loss
                 
                 # Call back after an interval
                 if (i + 1) % step_callback_interval == 0:
-                    self.step_callback(epoch = i + 1, loss = step_loss)
+                    self.step_callback(epoch = epoch, step = i + 1, loss = step_loss)
             
             train_loss = epoch_loss / len(self.train_loader)
-            val_loss, val_acc = self.train_losses.append(train_loss)
+            self.train_losses.append(train_loss)
 
-            self._evaluation(self)
-            
+            # Evaluation and other stuff
+            val_loss, val_acc = self._evaluation()
+            if self.scheduler is not None:
+                self.scheduler.step(val_loss)
+            if self.early_stopping is not None:
+                self.early_stopping(train_loss, val_loss)
+
             # Call back
             callback_dict = {
+                "epoch": epoch,
                 "train_loss": train_loss,
                 "val_loss": val_loss,
                 "val_acc": val_acc
             }
-            self.epoch_callback(callback_dict)
+            self.epoch_callback(**callback_dict)
     
     def _fit_train_sample(self, sample):
         data, label = sample
@@ -111,46 +123,35 @@ class Trainer:
 
         self.optimizer.zero_grad()
 
-        # Đưa dữ liệu theo chiều xuôi (forward pass)
+        # Forward pass
         prediction = self.model(data)
         loss_item = self.criterion(prediction, label)
 
-        # Đạo hàm ngược để cập nhật tham số mô hình (backward pass và update weights)
+        # Backward pass and update weights
         loss_item.backward()
-        optimizer.step()
+        self.optimizer.step()
         return loss_item.item()
     
     def _evaluation(self):
-        # Set state
         self.model.eval()
-        
-        # Looping over validation set
-        total_loss = 0
-        all_preds = []
-        all_labels = []
-        with torch.no_grad():  # No gradient
-            for data, label in self.val_loader:
-                data = data.to(self.device)
-                label = label.to(self.device)
+        all_preds, all_labels = [], []
+        total_loss, total_samples = 0.0, 0
 
+        with torch.no_grad():
+            for data, label in self.val_loader:
+                data, label = data.to(self.device), label.to(self.device)
                 outputs = self.model(data)
 
-                # Loss calculation
-                loss = self.criterion(outputs, label)  # assume self.criterion is defined
-                total_loss += loss.item()
-                num_batches += 1
+                loss = self.criterion(outputs, label)
+                total_loss += loss.item() * data.size(0)   # scale by batch size
+                total_samples += data.size(0)
 
-                _, predicted = torch.max(outputs, 1)
-                all_preds.extend(predicted.cpu().numpy())
+                preds = torch.argmax(outputs, dim=1)
+                all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(label.cpu().numpy())
 
-        # Get loss
-        val_loss = total_loss / len(self.val_loader)
-        self.val_losses.append(val_loss)
-        
-        # Get accuracy
+        val_loss = total_loss / total_samples
         val_acc = accuracy_score(all_labels, all_preds)
-        self.val_accs.append(val_acc)
 
         return val_loss, val_acc
     
