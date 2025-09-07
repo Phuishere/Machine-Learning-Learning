@@ -10,7 +10,9 @@
 python -m venv cnn_venv  
 "./cnn_venv/Scripts/activate.bat"  
 pip install -r "./cnn_learn/requirements.txt"
+pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124  
 ```  
+- Now pray that the version is compatible for your usecase.  
 ## Structure of the Repo:  
 <pre>
 cnn_learn/  
