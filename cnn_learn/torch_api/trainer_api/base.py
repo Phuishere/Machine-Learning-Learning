@@ -155,8 +155,12 @@ class Trainer:
 
         return val_loss, val_acc
     
-    def validate(self, class_names=[0, 1], plot_roc=True):
-        self.model.eval()
+    def validate(self, class_names=["0", "1"], plot_roc=True, use_val = True):
+        # Choose loader
+        if use_val:
+            data_loader = self.val_loader
+        else:
+            data_loader = self.test_loader
 
         val_loss = 0.0
         correct = 0
@@ -166,8 +170,9 @@ class Trainer:
         all_preds = []
         all_probs = []
 
+        self.model.eval()
         with torch.no_grad():
-            for inputs, labels in self.val_loader:
+            for inputs, labels in data_loader:
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
 

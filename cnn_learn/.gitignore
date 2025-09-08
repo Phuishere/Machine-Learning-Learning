@@ -1,2 +1,6 @@
 **/__pycache__
-**/datasets/
+**/resources/datasets/
+# Models
+**/resources/models/**.pt
+**/resources/models/**.pkl
+**/resources/models/**.txt

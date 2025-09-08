@@ -1,6 +1,5 @@
 class EarlyStopping:
     def __init__(self, tolerance=5, min_delta=0):
-
         self.tolerance = tolerance
         self.min_delta = min_delta
         self.counter = 0
@@ -11,3 +10,5 @@ class EarlyStopping:
             self.counter +=1
             if self.counter >= self.tolerance:  
                 self.early_stop = True
+                return True
+            return False
