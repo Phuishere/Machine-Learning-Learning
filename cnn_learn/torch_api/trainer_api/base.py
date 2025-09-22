@@ -7,6 +7,7 @@ from sklearn.metrics import (
     roc_curve, roc_auc_score
 )
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import torch
 from torch import nn
@@ -212,7 +213,7 @@ class Trainer:
             print(classification_report(all_labels_np, all_preds_np, target_names=class_names))
         
             print("Confusion Matrix:")
-            print(confusion_matrix(all_labels_np, all_preds_np))
+            sns.heatmap((confusion_matrix(all_labels_np, all_preds_np)))
         
             # ROC AUC (macro-average over all classes)
             try:

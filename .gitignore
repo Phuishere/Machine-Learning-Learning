@@ -3,6 +3,11 @@
 **.jpeg
 **.jpg
 **.png
+**.pkl
+
+# XGBoost
+**.buffer
+**.json
 
 # Environment
 **venv/
